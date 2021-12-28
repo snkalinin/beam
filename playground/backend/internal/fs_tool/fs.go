@@ -51,20 +51,20 @@ type LifeCycle struct {
 	folderGlobs    []string //folders that should be created to process code
 	Folder         Folder
 	Extension      Extension
-	ExecutableName func(uuid.UUID, string) (string, error)
+	ExecutableName func(uuid.UUID, string, string) (string, error)
 	pipelineId     uuid.UUID
 }
 
 // NewLifeCycle returns a corresponding LifeCycle depending on the given SDK.
 // workingDir should be existed and be prepared to create/delete/modify folders into him.
-func NewLifeCycle(sdk pb.Sdk, pipelineId uuid.UUID, workingDir string) (*LifeCycle, error) {
+func NewLifeCycle(sdk pb.Sdk, pipelineId uuid.UUID, workingDir, pipelinesFolder string) (*LifeCycle, error) {
 	switch sdk {
 	case pb.Sdk_SDK_JAVA:
-		return newJavaLifeCycle(pipelineId, workingDir), nil
+		return newJavaLifeCycle(pipelineId, workingDir, pipelinesFolder), nil
 	case pb.Sdk_SDK_GO:
-		return newGoLifeCycle(pipelineId, workingDir), nil
+		return newGoLifeCycle(pipelineId, workingDir, pipelinesFolder), nil
 	case pb.Sdk_SDK_PYTHON:
-		return newPythonLifeCycle(pipelineId, workingDir), nil
+		return newPythonLifeCycle(pipelineId, workingDir, pipelinesFolder), nil
 	default:
 		return nil, fmt.Errorf("%s isn't supported now", sdk)
 	}
