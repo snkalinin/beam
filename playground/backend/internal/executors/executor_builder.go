@@ -57,24 +57,24 @@ func NewExecutorBuilder() *ExecutorBuilder {
 	return &ExecutorBuilder{}
 }
 
-//WithExecutableFileName adds file name to executor
-func (b *ExecutorBuilder) WithExecutableFileName(name string) *ExecutorBuilder {
-	b.actions = append(b.actions, func(e *Executor) {
-		e.runArgs.fileName = name
-		e.testArgs.fileName = name
-	})
-	return b
-}
-
-//WithWorkingDir adds dir path to executor
-func (b *ExecutorBuilder) WithWorkingDir(dir string) *ExecutorBuilder {
-	b.actions = append(b.actions, func(e *Executor) {
-		e.compileArgs.workingDir = dir
-		e.runArgs.workingDir = dir
-		e.testArgs.workingDir = dir
-	})
-	return b
-}
+////WithExecutableFileName adds file name to executor
+//func (b *ExecutorBuilder) WithExecutableFileName(name string) *ExecutorBuilder {
+//	b.actions = append(b.actions, func(e *Executor) {
+//		e.runArgs.fileName = name
+//		e.testArgs.fileName = name
+//	})
+//	return b
+//}
+//
+////WithWorkingDir adds dir path to executor
+//func (b *ExecutorBuilder) WithWorkingDir(dir string) *ExecutorBuilder {
+//	b.actions = append(b.actions, func(e *Executor) {
+//		e.compileArgs.workingDir = dir
+//		e.runArgs.workingDir = dir
+//		e.testArgs.workingDir = dir
+//	})
+//	return b
+//}
 
 // WithCompiler - Lives chains to type *ExecutorBuilder and returns a *CompileBuilder
 func (b *ExecutorBuilder) WithCompiler() *CompileBuilder {
@@ -109,6 +109,14 @@ func (b *CompileBuilder) WithCommand(compileCmd string) *CompileBuilder {
 	return b
 }
 
+//WithWorkingDir adds dir path to executor
+func (b *CompileBuilder) WithWorkingDir(dir string) *CompileBuilder {
+	b.actions = append(b.actions, func(e *Executor) {
+		e.compileArgs.workingDir = dir
+	})
+	return b
+}
+
 //WithArgs adds compile args to executor
 func (b *CompileBuilder) WithArgs(compileArgs []string) *CompileBuilder {
 	b.actions = append(b.actions, func(e *Executor) {
@@ -121,6 +129,22 @@ func (b *CompileBuilder) WithArgs(compileArgs []string) *CompileBuilder {
 func (b *CompileBuilder) WithFileName(fileName string) *CompileBuilder {
 	b.actions = append(b.actions, func(e *Executor) {
 		e.compileArgs.fileName = fileName
+	})
+	return b
+}
+
+//WithExecutableFileName adds file name to executor
+func (b *RunBuilder) WithExecutableFileName(name string) *RunBuilder {
+	b.actions = append(b.actions, func(e *Executor) {
+		e.runArgs.fileName = name
+	})
+	return b
+}
+
+//WithWorkingDir adds dir path to executor
+func (b *RunBuilder) WithWorkingDir(dir string) *RunBuilder {
+	b.actions = append(b.actions, func(e *Executor) {
+		e.runArgs.workingDir = dir
 	})
 	return b
 }

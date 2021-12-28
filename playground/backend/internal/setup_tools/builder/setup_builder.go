@@ -101,3 +101,120 @@ func GetFileNameFromFolder(folderAbsolutePath string) string {
 	files, _ := filepath.Glob(fmt.Sprintf("%s/*%s", folderAbsolutePath, fs_tool.JavaSourceFileExtension))
 	return files[0]
 }
+
+// SetupValidatorBuilder return executor with set args for validator
+func SetupValidatorBuilder(lc *fs_tool.LifeCycle, sdkEnv *environment.BeamEnvs) (*executors.ExecutorBuilder, error) {
+	sdk := sdkEnv.ApacheBeamSdk
+	val, err := utils.GetValidators(sdk, lc.GetAbsoluteSourceFilePath())
+	if err != nil {
+		return nil, err
+	}
+	builder := executors.NewExecutorBuilder().
+		WithValidator().
+		WithSdkValidators(val).
+		ExecutorBuilder
+	return &builder, err
+}
+
+// SetupPreparatorBuilder return executor with set args for preparator
+func SetupPreparatorBuilder(lc *fs_tool.LifeCycle, sdkEnv *environment.BeamEnvs) (*executors.ExecutorBuilder, error) {
+	sdk := sdkEnv.ApacheBeamSdk
+	prep, err := utils.GetPreparators(sdk, lc.GetAbsoluteSourceFilePath())
+	if err != nil {
+		return nil, err
+	}
+	builder := executors.NewExecutorBuilder().
+		WithPreparator().
+		WithSdkPreparators(prep).
+		ExecutorBuilder
+	return &builder, err
+}
+
+// SetupCompilerBuilder return executor with set args for compiler
+func SetupCompilerBuilder(lc *fs_tool.LifeCycle, sdkEnv *environment.BeamEnvs) (*executors.ExecutorBuilder, error) {
+	executorConfig := sdkEnv.ExecutorConfig
+	builder := executors.NewExecutorBuilder().
+		WithCompiler().
+		WithCommand(executorConfig.CompileCmd).
+		WithWorkingDir(lc.GetAbsoluteBaseFolderPath()).
+		WithArgs(executorConfig.CompileArgs).
+		WithFileName(lc.GetAbsoluteSourceFilePath()).
+		ExecutorBuilder
+	return &builder, nil
+}
+
+// SetupRunBuilder return executor with set args for runner
+func SetupRunBuilder(lc *fs_tool.LifeCycle, pipelineOptions string, sdkEnv *environment.BeamEnvs) (*executors.ExecutorBuilder, error) {
+	sdk := sdkEnv.ApacheBeamSdk
+
+	if sdk == pb.Sdk_SDK_JAVA {
+		pipelineOptions = utils.ReplaceSpacesWithEquals(pipelineOptions)
+	}
+	executorConfig := sdkEnv.ExecutorConfig
+	builder := executors.NewExecutorBuilder().
+		WithRunner().
+		WithExecutableFileName(lc.GetAbsoluteExecutableFilePath()).
+		WithWorkingDir(lc.GetAbsoluteBaseFolderPath()).
+		WithCommand(executorConfig.RunCmd).
+		WithArgs(executorConfig.RunArgs).
+		WithPipelineOptions(strings.Split(pipelineOptions, " ")).
+		ExecutorBuilder
+
+	switch sdk {
+	case pb.Sdk_SDK_JAVA: // Executable name for java class will be known after compilation
+		args := replaceLogPlaceholder(lc, executorConfig)
+		builder = builder.WithRunner().WithArgs(args).ExecutorBuilder
+	case pb.Sdk_SDK_GO: //go run command is executable file itself
+		builder = builder.WithRunner().WithExecutableFileName("").
+			WithCommand(lc.GetAbsoluteExecutableFilePath()).ExecutorBuilder
+	case pb.Sdk_SDK_SCIO:
+		return nil, fmt.Errorf("SCIO is not supported yet")
+	default:
+		return nil, fmt.Errorf("incorrect sdk: %s", sdkEnv.ApacheBeamSdk)
+	}
+	return &builder, nil
+}
+
+// SetupTestBuilder return executor with set args for runner
+func SetupTestBuilder(lc *fs_tool.LifeCycle, pipelineOptions string, sdkEnv *environment.BeamEnvs) (*executors.ExecutorBuilder, error) {
+	sdk := sdkEnv.ApacheBeamSdk
+
+	if sdk == pb.Sdk_SDK_JAVA {
+		pipelineOptions = utils.ReplaceSpacesWithEquals(pipelineOptions)
+	}
+	executorConfig := sdkEnv.ExecutorConfig
+	builder := executors.NewExecutorBuilder().
+		WithRunner().
+		WithExecutableFileName(lc.GetAbsoluteExecutableFilePath()).
+		WithWorkingDir(lc.GetAbsoluteBaseFolderPath()).
+		WithCommand(executorConfig.RunCmd).
+		WithArgs(executorConfig.RunArgs).
+		WithPipelineOptions(strings.Split(pipelineOptions, " ")).
+		ExecutorBuilder
+
+	switch sdk {
+	case pb.Sdk_SDK_JAVA: // Executable name for java class will be known after compilation
+		args := replaceLogPlaceholder(lc, executorConfig)
+		builder = builder.WithRunner().WithArgs(args).ExecutorBuilder
+	case pb.Sdk_SDK_GO: //go run command is executable file itself
+		builder = builder.WithRunner().WithExecutableFileName("").
+			WithCommand(lc.GetAbsoluteExecutableFilePath()).ExecutorBuilder
+	case pb.Sdk_SDK_SCIO:
+		return nil, fmt.Errorf("SCIO is not supported yet")
+	default:
+		return nil, fmt.Errorf("incorrect sdk: %s", sdkEnv.ApacheBeamSdk)
+	}
+	return &builder, nil
+}
+
+func replaceLogPlaceholder(lc *fs_tool.LifeCycle, executorConfig *environment.ExecutorConfig) []string {
+	args := make([]string, 0)
+	for _, arg := range executorConfig.RunArgs {
+		if strings.Contains(arg, javaLogConfigFilePlaceholder) {
+			logConfigFilePath := filepath.Join(lc.GetAbsoluteBaseFolderPath(), javaLogConfigFileName)
+			arg = strings.Replace(arg, javaLogConfigFilePlaceholder, logConfigFilePath, 1)
+		}
+		args = append(args, arg)
+	}
+	return args
+}
