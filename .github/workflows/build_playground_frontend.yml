@@ -62,4 +62,4 @@ jobs:
         run: dockerlint Dockerfile
         working-directory: playground/frontend
       - name: test
-        run: echo github.ref
+        run: echo ${{ github.ref }}
