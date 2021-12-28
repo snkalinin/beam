@@ -54,6 +54,8 @@ jobs:
       - name: lint dockerfile
         run: dockerlint Dockerfile
         working-directory: playground/backend/containers/java
+      - name: test
+        run: echo github.ref
       - uses: hashicorp/setup-terraform@v1
         with:
             terraform_version: ${{ env.TERRAFORM_VERSION }}
